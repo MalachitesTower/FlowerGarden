@@ -3,6 +3,7 @@
         #https://www.tutorialspoint.com/how-can-i-vary-a-shape-s-alpha-with-tkinter
         #Set up heritability/Epigenetics
         #Grow multiple branches (that look nice)
+        #Rewrite plots for indive flowers
 
 try:
         import tkinter as tk
@@ -14,14 +15,14 @@ import math
 from statistics import mean
 
 #Set Display Variables
-root = tk.Tk()
-root.geometry("1400x650")
 WIDTH, HEIGHT = 1400, 650 #tk.winfo_screenwidth(), tk.winfo_screenheight()
+plots = {"A":[], "B":[], "C":[], "D":[], "E":[]}
+root = tk.Tk()
+root.geometry("1400x650") #write as concatenate
 
 #Set DEBUG
 DEBUG=False #False 
 DEBUG_L2=False
-
 
 def _seed_DefaultPlant(): #Set Default Plant Genetics
         #Set Genetics
@@ -88,11 +89,11 @@ def _seed_BredPlant(genes1, genes2, herit):
 
 
 def create_Plots():
-        plots = {"A":[], "B":[], "C":[], "D":[], "E":[]}
         n=1  #intentionally not starting at 0
         for l in plots:
-                 plots[l]=(round(n*WIDTH/(len(plots)+2)), HEIGHT)
-                 n+=1
+                plot_w = round(n*WIDTH/(len(plots)+2))
+                plots[l]=(plot_w), HEIGHT
+                n+=1                
         return plots
 
 def create_Colors(start='0123456789ABCDEF', herit = 1): #Randomly create a new hex style number or update an old one proportional to heritability
@@ -208,11 +209,31 @@ def _create_Stems(self, bud_x, bud_y, base_x, base_y, genes): #add herit and var
                          fill=genes["stemcolor"], width=genes["thickness"], smooth=False)
 tk.Canvas.create_Stems = _create_Stems
 
+def _create_Dirt(self, base_x, base_y):
+        image=Image.open('./dirt4.png')
+        img=image.resize((80, 40))
+        dirt = ImageTk.PhotoImage(img)       
+        dirtbutton=tk.Button(canvas, image=dirt)
+        dirtbutton.place(x= base_x-25, y=base_y-110)
+        dirt.image = dirt #Cannot delete because of garbage garbaging
+tk.Canvas.create_Dirt = _create_Dirt      
+
 def _grow_Background(self):
         bg = ImageTk.PhotoImage(file = "./flowerbg_2.png") #TODO: Create other background options
         canvas.create_image(0,0,image = bg, anchor=tk.NW)
         bg.image = bg #Cannot delete because of garbage garbaging
 tk.Canvas.grow_Background = _grow_Background
+
+def _grow_EmptyGarden(self): #Create Plots and Grow Plants
+        canvas.delete('all')
+        canvas.grow_Background()
+        plots=create_Plots()
+        for plot in plots:
+                base_x = plots[plot][0]
+                base_y = plots[plot][1]
+                canvas.create_Dirt(base_x, base_y)
+
+tk.Canvas.grow_EmptyGarden = _grow_EmptyGarden
 
 def _grow_FullGarden(self): #Create Plots and Grow Plants
         canvas.delete('all')
@@ -230,11 +251,16 @@ def _grow_FullGarden(self): #Create Plots and Grow Plants
                 canvas.create_Stems(bud_x, bud_y, base_x, base_y, genes)
                 for i in range(genes["flower_num"]):
                         canvas.create_Flowers(bud_x[i], bud_y[i], genes)
+                canvas.create_Dirt(base_x, base_y)
 tk.Canvas.grow_FullGarden = _grow_FullGarden
 
+def _grow_SingleFlower(self):
+        if DEBUG == True: hl_debug=2
+        
 
-def button_Test():
-        print( "Hello Python", "Hello World")
+def button_disambig():
+        if DEBUG == True: hl_debug=2
+        
 
 if __name__ == '__main__':
         hl_debug=0
@@ -249,37 +275,44 @@ if __name__ == '__main__':
         frame_right.place(x=WIDTH-90, y=50)
 
         #Place Widgets within Frames & Define Buttons
-        canvas = tk.Canvas(frame_left, width = WIDTH-110, height = HEIGHT-60, bg='white')
+        canvas = tk.Canvas(frame_left, width = WIDTH-110, height = HEIGHT-60, bg='white') 
         canvas.pack()
         title = tk.Label(frame_top,
                          text="***SEED***", font=("bold", 20))
         title.pack(side=tk.LEFT)
         submit_button = tk.Button(frame_top,
                        text = "Submit")
-        submit_button.pack(padx=5, side = tk.RIGHT)
+        submit_button.pack(side = tk.RIGHT)
         userinput_genes = tk.Entry(frame_top,
                              width = 50)
-        userinput_genes.pack(padx=5, side = tk.RIGHT)
+        userinput_genes.pack(padx=10, side = tk.RIGHT)
+
         subtitle = tk.Label(frame_right,
                          text="GARDEN!")
         subtitle.pack(pady=10)
-        plant_button = tk.Button(frame_right, width=10, text = "Plant New",
+
+        plant_button = tk.Button(frame_right, width=10, text = "ALL NEW",
                                  command = canvas.grow_FullGarden)
         plant_button.pack(pady=5)
+        weed_button = tk.Button(frame_right,
+                       width=10, text = "[REMOVE]")
+        weed_button.pack(pady=5)
         mix_button = tk.Button(frame_right,
-                       width=10, text = "Breed New")
+                       width=10, text = "[BREED]")
         mix_button.pack(pady=5)
-        clear_button = tk.Button(frame_right,
-                       width=10, text = "Clear Garden")
-        clear_button.pack(pady=5)
+        self_button = tk.Button(frame_right,
+                       width=10, text = "[SELF]")
+        self_button.pack(pady=5)
+        save_button = tk.Button(frame_right,
+                       width=10, text = "[SAVE]")
+        save_button.pack(pady=5)
+
+        till_button = tk.Button(frame_right, width=10, text = "CLEAR ALL",
+                                 command = canvas.grow_EmptyGarden)
+        till_button.pack(pady=5)
 
         #Create Plots and Grow Initial Plants from Scratch
         canvas.grow_FullGarden()          
         root.mainloop()
 
-"""
- 
 
-
-
-"""
