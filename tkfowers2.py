@@ -5,10 +5,7 @@
         #Grow multiple branches (that look nice)
         #Rewrite plots for indive flowers
 
-try:
-        import tkinter as tk
-except ImportError:
-        import Tkinter as tk  # Python 2
+import tkinter as tk
 from PIL import Image,ImageTk
 import random
 import math
@@ -16,7 +13,6 @@ from statistics import mean
 
 #Set Display Variables
 WIDTH, HEIGHT = 1400, 650 #tk.winfo_screenwidth(), tk.winfo_screenheight()
-plots = {"A":[], "B":[], "C":[], "D":[], "E":[]}
 root = tk.Tk()
 root.geometry("1400x650") #write as concatenate
 
@@ -24,8 +20,14 @@ root.geometry("1400x650") #write as concatenate
 DEBUG=False #False 
 DEBUG_L2=False
 
-def _seed_DefaultPlant(): #Set Default Plant Genetics
-        #Set Genetics
+def _seed_DefaultPlant():
+        """Sets the default parameter information for an arbitrary plant.
+        Parameters:
+                NULL
+        Returns:
+                dict:dictionaries defining the key parameters including genes: parameters used for illustrating the plant, epig: parameters used for introducing randomness when creating the plant, and herit: parameters used for controlling mixing of parameters of multiple plants.
+        """
+        
         GENES={"flower_num":5,
                "petal_num":4, "petal_rad":80.0, "petal_xFact":2, "petal_line": "#b5e3af", "petal_fill":"#D773A2", "petal_linewid":2.0, "petal_coeff":6,
                "center_line":"#b2b2ff", "center_fill":"#72c6ff", "center_linewid":1.0,"center_rad":5.0, "center_stipple":"",
@@ -42,6 +44,15 @@ def _seed_DefaultPlant(): #Set Default Plant Genetics
         return {"genes":GENES, "herit":HERIT, "epige":EPIGE}
 
 def _seed_RandomPlant():
+        """Randomly creates new parameter information for any given plant.
+        Parameters:
+                NULL
+        Returns:
+                genes:dictionaries defining the key parameters used for illustrating the plant.
+        TODO:
+                Will eventually include epig: parameters used for introducing randomness when creating the plant, and herit: parameters used for controlling mixing of parameters of multiple plants.
+        """
+
         genes = _seed_DefaultPlant()["genes"]
         for key, value in genes.items():
                 if isinstance(value, int):
@@ -62,7 +73,16 @@ def _seed_RandomPlant():
         genes = create_Reason(genes)
         return genes
 
-def _seed_SelfedPlant(genes, herit):
+def _seed_SelfedPlant(genes):
+        """Randomly changes parameter information for a provided plant.
+        Parameters:
+                genes:dictionaries defining the key parameters used for illustrating the plant.
+        Returns:
+                genes:dictionaries defining the key parameters used for illustrating the plant.
+        TODO:
+                Will eventually include epig: parameters used for introducing randomness when creating the plant, and herit: parameters used for controlling mixing of parameters of multiple plants.
+        """
+
         for key, value in genes.items():
                 if isinstance(value, int):
                         newval=random.weibullvariate(value, value*heritability)
@@ -78,7 +98,17 @@ def _seed_SelfedPlant(genes, herit):
                         genes[key]=[create_Colors(start=value[1:])]
         return genes
 
-def _seed_BredPlant(genes1, genes2, herit):
+def _seed_BredPlant(genes1, genes2):
+        """Randomly changes parameter information based on two provided plants.
+        Parameters:
+                genes1:dictionaries defining the key parameters used for illustrating the plant.
+                genes2:dictionaries defining the key parameters used for illustrating the plant.
+        Returns:
+                genes:dictionaries defining the key parameters used for illustrating the plant.
+        TODO:
+                Will eventually include epig: parameters used for introducing randomness when creating the plant, and herit: parameters used for controlling mixing of parameters of multiple plants.
+        """
+
         gene=dict()
         for gene1, gene2 in zip(genes1.values(), genes2.values()) :
                 if isinstance(gene, int):
@@ -89,6 +119,13 @@ def _seed_BredPlant(genes1, genes2, herit):
 
 
 def create_Plots():
+        """Randomly changes parameter information based on two provided plants.
+        Parameters:
+                NULL
+        Returns:
+                plots: dictionary of plots containing the plot name and x,y location.
+        """
+        plots = {"A":[], "B":[], "C":[], "D":[], "E":[]}
         n=1  #intentionally not starting at 0
         for l in plots:
                 plot_w = round(n*WIDTH/(len(plots)+2))
@@ -96,49 +133,63 @@ def create_Plots():
                 n+=1                
         return plots
 
-def create_Colors(start='0123456789ABCDEF', herit = 1): #Randomly create a new hex style number or update an old one proportional to heritability
-        if "#" in start:
-                t=0; rand_colors=start
-                while t<herit:
-                        rand_colors = rand_colors.replace(random.choice(rand_colors[1:]), random.choice('0123456789ABCDEF'), 1)
-                        t+=1
-        else:
-                rand_colors = "#"+''.join([random.choice(start) for i in range(6)])
+def create_Colors(start='#FFFFFF', herit=10):
+        """Randomly create a new hex style number or update an old one proportional to heritability. If no inital hex given, a completely random color is provided.
+        Parameters:
+                start: initial value for hex. Default is white.
+                herit: Number of replacements. Default is 10.
+        Returns:
+                rand_colors: a string of a hex color
+        """
+        t=0; rand_colors=start
+        while t<herit:
+                rand_colors = rand_colors.replace(random.choice(rand_colors[1:]), random.choice('0123456789ABCDEF'), 1) #rand_colors = "#"+''.join([random.choice(start) for i in range(6)])
+                t+=1                 
         return rand_colors
 
-def make_NotHex(l): #convert hex letters into two digit numbers
-        hex={
-                "A":10,
-                "B":11,
-                "C":12,
-                "D":13,
-                "E":14,
-                "F":15}
-
+def make_NotHex(l):
+        """Convert hex letter into two digit RGB numbers
+        Parameters:
+                l: letters or numbers 
+        Returns:
+                int(l):an integer representing the value of the initial input
+        """
+        hex={"A":10,"B":11,"C":12,"D":13,"E":14,"F":15}
         if l in hex.keys():
                 if DEBUG_L2 == True: print("replaced ", l, " with: ", hex[l])
                 l = hex[l]
         return int(l)
 
-def check_Green(color):  #Check if a hex color is green or not   
-        if DEBUG == True: print("Now Running: check_Green.\n", "stemcolor: ", color, "\nlength: ", len(color)) 
+def check_Green(color):
+        """Check if a hex color is green or not
+        Parameters:
+                color: initial value for hex.
+        Returns:
+                Bool: True if is green
+        """   
+        if DEBUG_L2 == True: print("Now Running: check_Green.\n", "stemcolor: ", color, "\nlength: ", len(color)) 
         rr = make_NotHex(color[1])*16 + make_NotHex(color[2]) #Convert letters and numbers from hex to rgb. Leave out hex.
         gg = make_NotHex(color[3])*16 + make_NotHex(color[4])
         bb = make_NotHex(color[5])*16 + make_NotHex(color[6])
-
         if gg>rr and gg>bb:
                 return True
         else:
                 return False        
 
-def make_Green(color): #Generate random hex colors until a green color is returned
-        if DEBUG == True: print("Now Running: make_Green.")
+def make_Green(color):
+        """Generate random hex colors until a green color is returned
+        Parameters:
+                color: initial value for hex.
+        Returns:
+                color: final value for hex, now green
+        """
+        if DEBUG_L2 == True: print("Now Running: make_Green.")
         result = check_Green(color)
-        if DEBUG == True: print("is", color," green?: ", result)
+        if DEBUG_L2 == True: print("is", color," green?: ", result)
         while result is False:
                 color=create_Colors(color)
                 result = check_Green(color)
-                if DEBUG == True: print("Updated: is ", color, " green?: ", result)
+                if DEBUG_L2 == True: print("Updated: is ", color, " green?: ", result)
         return color
 
 def linspace(start, stop, n):
