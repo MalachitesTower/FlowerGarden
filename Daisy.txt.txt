@@ -1,0 +1,5 @@
+{"flower_num":5,
+"petal_num":4, "petal_rad":80.0, "petal_xFact":2, "petal_line": "#b5e3af", "petal_fill":"#D773A2", "petal_linewid":2.0, "petal_coeff":6,
+"center_line":"#b2b2ff", "center_fill":"#72c6ff", "center_linewid":1.0,"center_rad":5.0, "center_stipple":"",
+"layer_num":1, "layer_coeff":2.0,
+"stemcolor":"#ABCDEF", "thickness":10}

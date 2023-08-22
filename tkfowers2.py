@@ -4,6 +4,8 @@
         #Set up heritability/Epigenetics
         #Grow multiple branches (that look nice)
         #Rewrite plots for indive flowers
+        #Rerite as Classes
+        
 
 import tkinter as tk
 from PIL import Image,ImageTk
