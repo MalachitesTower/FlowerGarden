@@ -11,7 +11,8 @@ import random
 import math
 from statistics import mean
 import pickle
-import numpy as np #Not yet available
+import bokeh.plotting
+import numpy as np 
 root = tk.Tk() #Master object to the application
 
 #Set DEBUG
@@ -83,7 +84,8 @@ class Seed:
                    "petal_num":4, "petal_rad":80.0, "petal_xFact":2, "petal_line": "#b5e3af", "petal_fill":"#D773A2", "petal_linewid":2.0, "petal_coeff":6,
                    "center_line":"#b2b2ff", "center_fill":"#72c6ff", "center_linewid":1.0,"center_rad":5.0, "center_stipple":"",
                    "layer_num":1, "layer_coeff":2.0,
-                   "stemcolor":"#ABCDEF", "thickness":10}
+                   "stemcolor":"#ABCDEF", "stem_thickness":1, "stem_length":200, "stem_angle":np.pi/6,
+                   "branch_alt":True}
         self.phenome = {"height":0} #Filling out as needed
         self.heri = {"color":1, "selfing":1} #Filling out as needed
         self.limits = {"petal_num":3,
@@ -166,40 +168,59 @@ class Plant():
                                     fill=genes["center_fill"], outline=genes["center_line"], 
                                     width=genes["center_linewid"])                    
     def create_Nodes(self, x1, y1, flower_num, angle, length):
-        x2 = x1 + length
-        y2 = math.tan(angle)*(x2-x1)+y1 
-        xnode = np.linspace(x1, x2, flower_num, dtype=int)
-        ynode = np.linspace(y1, y2, flower_num, dtype=int)
-        nodes = set(zip(xnode, ynode))
+        y2 = y1 - length #make gene
+        ynode = np.linspace(y2, y1, flower_num*2, dtype=int)
+        xnode = [ angle*(y1-y)+x1 for y in ynode ]
+        nodes = list(zip(xnode, ynode))
         return nodes
 
     def create_Stems(self, base_x, base_y, genes):
-            phen_angle = random.weibullvariate(0, 1)#Add Stem Angle: genes["stem_angle"].
-            phen_length = random.weibullvariate(50, 1)# Add Length
+            phen_angle = 0 
+            phen_length = random.uniform(0.1*base_y, 0.9*base_y) #genes["stem_length"]
             mainstem = self.create_Nodes(base_x, base_y, genes["flower_num"], phen_angle, phen_length)
-            print("mainstem: ", mainstem, '/n')
-            self.canvas.create_line(base_x, base_y, max(mainstem),
-                             fill=genes["stemcolor"], width=genes["thickness"], smooth=False)
+            delta = 2
+            #print("mainstem: ", mainstem, "\n phen_angle", phen_angle, delta, "\nBase", base_x, base_y)
+            self.canvas.create_line(base_x, base_y, mainstem,
+                             fill=genes["stemcolor"], width=genes["stem_thickness"], smooth=True)
+            x1 = mainstem[0][0]
+            y1 = mainstem[0][1]
+ 
+            if genes["branch_alt"]==False:
+                step = 1
+            else:
+                start = 1
+                step = 2
+
+            phen_angle+=delta
+            phen_length = phen_length*0.1
             
-            for node in mainstem:
+            for node in mainstem[1:len(mainstem):step]:
+                use_length = phen_length #make gene
+                use_length -= phen_length*0.5 
+                x1 = node[0]; y1 = node[1]
+                branch = self.create_Nodes(x1, y1, genes["flower_num"], phen_angle, use_length)
+                self.canvas.create_line(x1, y1, branch,
+                             fill=genes["stemcolor"], width=genes["stem_thickness"], smooth=False)
+                x1 = branch[0][0]
+                y1 = branch[0][1]
+                self.create_Flowers(x1, y1, genes)            
+                
+            for node in mainstem[start:len(mainstem):step]:
+                use_length = phen_length #make gene
+                use_length -= phen_length*0.5
                 x1 = node[0]
                 y1 = node[1]
-                print("coordinates: ", x1, y1, "/n")
-                branch = self.create_Nodes(x1, y1, genes["flower_num"], phen_angle+30, phen_length)
-                print("branch", branch, "/n")
-                self.canvas.create_line(x1, y1, branch,
-                             fill=genes["stemcolor"], width=genes["thickness"], smooth=False)
-                self.canvas.create_Flowers(max(branch), genes)
-            #
-            #
-            '''if genes["branch_alt"]==False:
-                branch = create_Nodes(node, 3, phen_angle-30, 10) 
+                branch = self.create_Nodes(x1, y1, 3, -phen_angle, use_length) 
                 self.canvas.create_line(node,branch,
-                             fill=genes["stemcolor"], width=genes["thickness"], smooth=False)
-                self.canvas.create_Flowers(max(branch), genes)'''
+                          fill=genes["stemcolor"], width=genes["stem_thickness"], smooth=False)
+                x1 = branch[0][0]
+                y1 = branch[0][1]
+                self.create_Flowers(x1, y1, genes)
+            x1 = mainstem[0][0]
+            y1 = mainstem[0][1]
+            self.create_Flowers(x1, y1, genes)
 
             
-
 '''In the process of rewriting the 'nodes' element:
 Currently Line A is drawn between the base point and a number of nodes equal to the flower number. The nodes are a random point between the base and every bud. Eg, a one bud flower will have one node between the base and bud. (???).
 Currently Line B is drawn between the random node points and each bud at that location.
@@ -261,6 +282,7 @@ class Garden():
             self.create_Background()
             plots = self.dimensions.layoutPlots()
             for plot in plots:
+                    print("Plot Number", plot)
                     try:
                             seed = Seed()
                             newplant = Plant(seed.randomSeed(), self.dimensions, self.canvas)
@@ -268,9 +290,9 @@ class Garden():
                             newplant = Plant(seed, self.dimensions, self.canvas) #Figure out when except actually triggered
                     base_x = plots[plot][0]
                     base_y = dimensions.height - plots[plot][1]
-                    bud_x = [random.triangular(base_x-(self.dimensions.cnv[2]/7),base_x+(self.dimensions.cnv[2]/7), base_x) for i in range(0, seed.genome["flower_num"]) ]
-                    bud_y = [random.triangular(self.dimensions.cnv[3]-(self.dimensions.cnv[3]/7),0+(self.dimensions.cnv[3]/7),0+(2*self.dimensions.cnv[3]/7)) for i in range(0, seed.genome["flower_num"]) ]
-#                    print(type(base_x));print(type(base_y));print(type(bud_x));print(type(bud_y))
+                    #bud_x = [random.triangular(base_x-(self.dimensions.cnv[2]/7),base_x+(self.dimensions.cnv[2]/7), base_x) for i in range(0, seed.genome["flower_num"]) ]
+                    #bud_y = [random.triangular(self.dimensions.cnv[3]-(self.dimensions.cnv[3]/7),0+(self.dimensions.cnv[3]/7),0+(2*self.dimensions.cnv[3]/7)) for i in range(0, seed.genome["flower_num"]) ]
+#                   print(type(base_x));print(type(base_y));print(type(bud_x));print(type(bud_y))
                     newplant.create_Stems(base_x, base_y, seed.genome)
                     '''for i in range(seed.genome["flower_num"]):
                             newplant.create_Flowers(bud_x[i], bud_y[i], seed.genome)'''
@@ -305,7 +327,7 @@ def repairTool(genome, limits):
             The updated genome"""
     while genome["petal_num"]<limits["petal_num"]:
         genome["petal_num"] += random.randint(1, 5)
-    while genome["petal_rad"] <= limits["petal_rad"] and self.cnv[2] and self.cnv[3]:
+    while genome["petal_rad"] <= limits["petal_rad"] and dimensions.cnv[2]*0.5 and dimensions.cnv[3]*0.5:
         genome["petal_rad"] += random.randint(1, 12)
     while genome["petal_xFact"] > limits["petal_xFact"]: 
         genome["petal_xFact"]-= random.randint(1, 30)
